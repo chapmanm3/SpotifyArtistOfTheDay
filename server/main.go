@@ -11,6 +11,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
 )
 
@@ -23,44 +24,49 @@ type AuthTokenResponse struct {
 }
 
 type ExplicitContentBody struct {
-  FilterEnabled bool `json:"filter_enabled"`
-  FilterLocked bool `json:"filter_locked"`
+	FilterEnabled bool `json:"filter_enabled"`
+	FilterLocked  bool `json:"filter_locked"`
 }
 
 type ExternalUrlsBody struct {
-  Spotify string `json:"spotify"`
+	Spotify string `json:"spotify"`
 }
 
 type FollowersBody struct {
-  Href string `json:"href"`
-  Total int `json:"total"`
+	Href  string `json:"href"`
+	Total int    `json:"total"`
 }
 
 type ImagesBody struct {
-  Url string `json:"url"`
-  Height int `json:"height"`
-  Width int `json:width`
+	Url    string `json:"url"`
+	Height int    `json:"height"`
+	Width  int    `json:width`
 }
 
 type UserProfileResponse struct {
-  Country string `json:"contry"`
-  DisplayName string `json:"display_name"`
-  Email string `json:"email"`
-  ExplicitContent ExplicitContentBody `json:"explicit_content"`
-  ExternalUrls ExternalUrlsBody `json:"external_urls"`
-  Followers FollowersBody `json:"followers"`
-  Href string `json:href`
-  Images []ImagesBody `json:images`
-  Product string `json:product`
-  Type string `json:type`
-  Uri string `json:uri`
+	Country         string              `json:"contry"`
+	DisplayName     string              `json:"display_name"`
+	Email           string              `json:"email"`
+	ExplicitContent ExplicitContentBody `json:"explicit_content"`
+	ExternalUrls    ExternalUrlsBody    `json:"external_urls"`
+	Followers       FollowersBody       `json:"followers"`
+	Href            string              `json:href`
+	Images          []ImagesBody        `json:images`
+	Product         string              `json:product`
+	Type            string              `json:type`
+	Uri             string              `json:uri`
 }
 
 func main() {
 	router := gin.Default()
 
-	router.GET("/login", authUser)
-	router.GET("/callback", authCallback)
+	router.Use(static.Serve("/", static.LocalFile("./dist", true)))
+
+	api := router.Group("/api")
+	{
+		api.GET("/login", authUser)
+		api.GET("/callback", authCallback)
+	}
 
 	router.Run()
 }
@@ -72,7 +78,7 @@ func authUser(c *gin.Context) {
 	clientID := os.Getenv("SAD_CLIENT_ID")
 	fmt.Printf("clientID: %v", clientID)
 	//clientSecret := os.Getenv("SAD_CLIENT_SECRET")
-	redirectUri := "http://localhost:8080/callback"
+	redirectUri := "http://localhost:8080/api/callback"
 	fmt.Printf("redirect URI: %v", redirectUri)
 	scope := "user-read-private user-read-email user-top-read"
 
@@ -99,11 +105,11 @@ func authCallback(c *gin.Context) {
 		token, err := getAuthToken(code, clientID, clientSecret)
 
 		if token != "" {
-      userProfile, err := getUserProfile(token)
-      if err != nil {
-        c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err})
-      }
-      c.IndentedJSON(http.StatusOK, gin.H{"auth_code": token, "user Profile": *userProfile})
+			userProfile, err := getUserProfile(token)
+			if err != nil {
+				c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err})
+			}
+			c.IndentedJSON(http.StatusOK, gin.H{"auth_code": token, "user Profile": *userProfile})
 		} else {
 			c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err})
 		}
@@ -143,41 +149,41 @@ func getAuthToken(code string, clientID string, clientSecret string) (string, er
 	return "", err
 }
 
-func getUserProfile( authToken string ) ( *UserProfileResponse, error ) {
-  userProfile := &UserProfileResponse{}
+func getUserProfile(authToken string) (*UserProfileResponse, error) {
+	userProfile := &UserProfileResponse{}
 
-  fmt.Println("Getting user profile")
-  
-  client := &http.Client{}
-  req, err := http.NewRequest(
-    "GET",
-    "https://api.spotify.com/v1/me",
-    nil,
-  )
-  req.Header.Add("Authorization", fmt.Sprintf("Bearer %v", authToken))
+	fmt.Println("Getting user profile")
 
-  if err != nil {
-    fmt.Println(err)
-    return nil, err
-  }
+	client := &http.Client{}
+	req, err := http.NewRequest(
+		"GET",
+		"https://api.spotify.com/v1/me",
+		nil,
+	)
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %v", authToken))
 
-  res, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
 
-  if err != nil {
-    fmt.Println(err)
-    return nil, err
-  }
+	res, err := client.Do(req)
 
-  body, err := io.ReadAll(res.Body)
-  if err != nil {
-    fmt.Println(err)
-    return nil, err
-  }
-  fmt.Println(body)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
 
-  json.Unmarshal(body, userProfile)
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	fmt.Println(body)
 
-  fmt.Println(*userProfile)
-  
-  return userProfile, nil
+	json.Unmarshal(body, userProfile)
+
+	fmt.Println(*userProfile)
+
+	return userProfile, nil
 }
