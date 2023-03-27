@@ -43,6 +43,20 @@ func GetUserInfo(userId string) UserInfo {
 	return result
 }
 
+func GetUserIdFromAuthToken(authToken string) string {
+  dbpool := openConnection()
+  defer dbpool.Close()
+
+  var returnID string
+  err := dbpool.QueryRow(context.Background(), fmt.Sprintf("select user_id from authInfo where auth_token = '%v'", authToken)).Scan(&returnID);
+
+  if err != nil {
+    fmt.Fprintf(os.Stderr, "Idk man something fucked up: %v", err)
+  }
+  return returnID
+
+}
+
 func SetAuthInfo(info types.AuthTokenResponse) {
 	dbpool := openConnection()
 	defer dbpool.Close()
