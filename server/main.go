@@ -13,15 +13,10 @@ import (
 
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
-)
 
-type AuthTokenResponse struct {
-	AccessToken  string `json:"access_token"`
-	TokenType    string `json:"token_type"`
-	Scope        string `json:"scope"`
-	ExpiresIn    int    `json:"expires_in"`
-	RefreshToken string `json:"refresh_token"`
-}
+  "SpotifyArtistOfTheDay/database"
+  "SpotifyArtistOfTheDay/types"
+)
 
 type ExplicitContentBody struct {
 	FilterEnabled bool `json:"filter_enabled"`
@@ -68,6 +63,8 @@ func main() {
 		api.GET("/callback", authCallback)
 	}
 
+  //database.GetUserInfo()
+
 	router.Run()
 }
 
@@ -92,24 +89,19 @@ func authCallback(c *gin.Context) {
 	clientID := os.Getenv("SAD_CLIENT_ID")
 	clientSecret := os.Getenv("SAD_CLIENT_SECRET")
 
-	fmt.Printf("ClientID: %v", clientID)
-	fmt.Println()
-
-	fmt.Printf("ClientSecret: %v", clientSecret)
-	fmt.Println()
-
-	fmt.Printf("Code: %v", code)
-	fmt.Println()
-
 	if code != "" {
 		token, err := getAuthToken(code, clientID, clientSecret)
 
 		if token != "" {
-			userProfile, err := getUserProfile(token)
+			//userProfile, err := getUserProfile(token)
+
 			if err != nil {
 				c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err})
 			}
-			c.IndentedJSON(http.StatusOK, gin.H{"auth_code": token, "user Profile": *userProfile})
+      
+      c.SetCookie("auth_code", token, 10, "/", c.Request.URL.Hostname(), false, true)
+      c.Redirect(301, "http://localhost:8080/")
+			//c.IndentedJSON(http.StatusOK, gin.H{"auth_code": token, "user Profile": *userProfile})
 		} else {
 			c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err})
 		}
@@ -123,7 +115,7 @@ func getAuthToken(code string, clientID string, clientSecret string) (string, er
 	form := url.Values{}
 	form.Add("grant_type", "authorization_code")
 	form.Add("code", code)
-	form.Add("redirect_uri", "http://localhost:8080/callback")
+	form.Add("redirect_uri", "http://localhost:8080/api/callback")
 
 	client := &http.Client{}
 	req, err := http.NewRequest(
@@ -142,14 +134,23 @@ func getAuthToken(code string, clientID string, clientSecret string) (string, er
 		if err != nil {
 			return "", errors.New("Shit broke ouch")
 		}
-		var jsonBody AuthTokenResponse
+		var jsonBody types.AuthTokenResponse
 		json.Unmarshal(body, &jsonBody)
+    database.SetAuthInfo(jsonBody)
 		return string(jsonBody.AccessToken), nil
 	}
 	return "", err
 }
 
-func getUserProfile(authToken string) (*UserProfileResponse, error) {
+func getUserInfo(c* gin.Context) {
+  fmt.Println("Get User Info")
+
+  userID := database.GetUserIdFromAuthToken(c.Request.Header.Get("auth_token"))
+
+  user := database.GetUserInfo(userID)
+}
+
+func getSpotifyUserProfile(authToken string) (*UserProfileResponse, error) {
 	userProfile := &UserProfileResponse{}
 
 	fmt.Println("Getting user profile")
