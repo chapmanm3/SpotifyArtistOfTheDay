@@ -13,44 +13,11 @@ import (
 
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx"
 
-  "SpotifyArtistOfTheDay/database"
-  "SpotifyArtistOfTheDay/types"
+	"SpotifyArtistOfTheDay/database"
+	"SpotifyArtistOfTheDay/types"
 )
-
-type ExplicitContentBody struct {
-	FilterEnabled bool `json:"filter_enabled"`
-	FilterLocked  bool `json:"filter_locked"`
-}
-
-type ExternalUrlsBody struct {
-	Spotify string `json:"spotify"`
-}
-
-type FollowersBody struct {
-	Href  string `json:"href"`
-	Total int    `json:"total"`
-}
-
-type ImagesBody struct {
-	Url    string `json:"url"`
-	Height int    `json:"height"`
-	Width  int    `json:width`
-}
-
-type UserProfileResponse struct {
-	Country         string              `json:"contry"`
-	DisplayName     string              `json:"display_name"`
-	Email           string              `json:"email"`
-	ExplicitContent ExplicitContentBody `json:"explicit_content"`
-	ExternalUrls    ExternalUrlsBody    `json:"external_urls"`
-	Followers       FollowersBody       `json:"followers"`
-	Href            string              `json:href`
-	Images          []ImagesBody        `json:images`
-	Product         string              `json:product`
-	Type            string              `json:type`
-	Uri             string              `json:uri`
-}
 
 func main() {
 	router := gin.Default()
@@ -61,9 +28,10 @@ func main() {
 	{
 		api.GET("/login", authUser)
 		api.GET("/callback", authCallback)
+		api.GET("/userInfo", getUserInfo)
 	}
 
-  //database.GetUserInfo()
+	//database.GetUserInfo()
 
 	router.Run()
 }
@@ -80,7 +48,6 @@ func authUser(c *gin.Context) {
 	scope := "user-read-private user-read-email user-top-read"
 
 	c.Redirect(301, fmt.Sprintf("https://accounts.spotify.com/authorize?response_type=%v&client_id=%v&scope=%v&redirect_uri=%v", "code", clientID, scope, redirectUri))
-
 }
 
 func authCallback(c *gin.Context) {
@@ -90,27 +57,28 @@ func authCallback(c *gin.Context) {
 	clientSecret := os.Getenv("SAD_CLIENT_SECRET")
 
 	if code != "" {
-		token, err := getAuthToken(code, clientID, clientSecret)
+		tokenObj, err := getAuthTokenResponse(code, clientID, clientSecret)
 
-		if token != "" {
-			//userProfile, err := getUserProfile(token)
-
-			if err != nil {
-				c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err})
-			}
-      
-      c.SetCookie("auth_code", token, 10, "/", c.Request.URL.Hostname(), false, true)
-      c.Redirect(301, "http://localhost:8080/")
-			//c.IndentedJSON(http.StatusOK, gin.H{"auth_code": token, "user Profile": *userProfile})
-		} else {
+		if err != nil {
 			c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err})
 		}
+
+		userProfile, err := getSpotifyUserProfile(tokenObj.AccessToken)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Couldn't resolve Spotify Profile'")
+		}
+    database.SetUserInfo(*userProfile)
+    database.SetAuthInfo(*tokenObj, userProfile.Email)
+
+		c.SetCookie("auth_code", tokenObj.AccessToken, 10, "/", c.Request.URL.Hostname(), false, true)
+		c.Redirect(301, "http://localhost:8080/")
+		//c.IndentedJSON(http.StatusOK, gin.H{"auth_code": token, "user Profile": *userProfile})
 	} else {
-		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "No Code Recieved"})
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "No Code Given"})
 	}
 }
 
-func getAuthToken(code string, clientID string, clientSecret string) (string, error) {
+func getAuthTokenResponse(code string, clientID string, clientSecret string) (*types.AuthTokenResponse, error) {
 
 	form := url.Values{}
 	form.Add("grant_type", "authorization_code")
@@ -132,26 +100,38 @@ func getAuthToken(code string, clientID string, clientSecret string) (string, er
 	if res != nil {
 		body, err := io.ReadAll(res.Body)
 		if err != nil {
-			return "", errors.New("Shit broke ouch")
+			return nil, errors.New("Shit broke ouch")
 		}
 		var jsonBody types.AuthTokenResponse
 		json.Unmarshal(body, &jsonBody)
-    database.SetAuthInfo(jsonBody)
-		return string(jsonBody.AccessToken), nil
+		return &jsonBody, nil
 	}
-	return "", err
+	return nil, err
 }
 
-func getUserInfo(c* gin.Context) {
-  fmt.Println("Get User Info")
+func getUserInfo(c *gin.Context) {
+	fmt.Println("Get User Info")
+	authCode := c.Request.Header.Get("auth_code")
 
-  userID := database.GetUserIdFromAuthToken(c.Request.Header.Get("auth_token"))
+	userID := database.GetUserIdFromAuthToken(authCode)
 
-  user := database.GetUserInfo(userID)
+	user, err := database.GetUserInfo(userID)
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			spotifyUser, err := getSpotifyUserProfile(authCode)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "getSpotifyUserProfile broke with err: %v", err)
+			}
+			c.IndentedJSON(http.StatusOK, gin.H{"spotify_user_info": spotifyUser})
+		}
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{"user_info": user})
 }
 
-func getSpotifyUserProfile(authToken string) (*UserProfileResponse, error) {
-	userProfile := &UserProfileResponse{}
+func getSpotifyUserProfile(authToken string) (*types.UserProfileResponse, error) {
+	userProfile := &types.UserProfileResponse{}
 
 	fmt.Println("Getting user profile")
 
