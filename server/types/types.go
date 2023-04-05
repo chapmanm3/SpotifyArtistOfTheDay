@@ -1,6 +1,6 @@
 package types
 
-import ()
+import "gorm.io/gorm"
 
 type AuthTokenResponse struct {
 	AccessToken  string `json:"access_token"`
@@ -42,4 +42,24 @@ type UserProfileResponse struct {
 	Product         string              `json:"product"`
 	Type            string              `json:"type"`
 	Uri             string              `json:"uri"`
+}
+
+type UserInfo struct {
+  gorm.Model
+	Country         string
+	DisplayName     string
+	Email           string
+	ExplicitContent bool
+	Followers       int
+	ImageUrl        string
+	Uri             string
+}
+
+type AuthInfo struct {
+  gorm.Model
+	AccessToken  string
+	TokenType    string
+	Scope        string
+	ExpiresIn    int
+	RefreshToken string
 }
