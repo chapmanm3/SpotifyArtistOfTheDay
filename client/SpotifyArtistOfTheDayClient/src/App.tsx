@@ -1,9 +1,20 @@
 import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import './App.css'
+import axios from 'axios'
 
 function App() {
   const [count, setCount] = useState(0)
+
+  const getUserInfoClick = async () => {
+    try {
+      const resp = await axios.get('http://localhost:8080/api/userInfo', {withCredentials: true})
+      console.log(resp.data)
+    }
+    catch (err) {
+      console.error(err)
+    }
+  }
 
   return (
     <div className="App">
@@ -24,6 +35,10 @@ function App() {
           onClick={() => window.location.href = "http://localhost:8080/api/login"}
         >
           Test Login
+        </button>
+        <button
+          onClick={() => getUserInfoClick()}>
+          Get User Info
         </button>
         <p>
           Edit <code>src/App.tsx</code> and save to test HMR

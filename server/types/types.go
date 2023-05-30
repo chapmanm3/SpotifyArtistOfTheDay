@@ -45,7 +45,7 @@ type UserProfileResponse struct {
 }
 
 type UserInfo struct {
-  gorm.Model
+	gorm.Model
 	Country         string
 	DisplayName     string
 	Email           string
@@ -53,10 +53,12 @@ type UserInfo struct {
 	Followers       int
 	ImageUrl        string
 	Uri             string
+	AuthInfo        AuthInfo
 }
 
 type AuthInfo struct {
-  gorm.Model
+	gorm.Model
+	UserInfoID   int
 	AccessToken  string
 	TokenType    string
 	Scope        string

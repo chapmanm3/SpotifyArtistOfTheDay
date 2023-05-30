@@ -20,6 +20,8 @@ import (
 )
 
 func main() {
+  database.SeedDB()
+
 	router := gin.Default()
 
 	router.Use(static.Serve("/", static.LocalFile("./dist", true)))
@@ -67,8 +69,7 @@ func authCallback(c *gin.Context) {
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Couldn't resolve Spotify Profile'")
 		}
-    database.SetUserInfo(*userProfile)
-    database.SetAuthInfo(*tokenObj, userProfile.Email)
+    database.SetUserInfo(userProfile, tokenObj)
 
 		c.SetCookie("auth_code", tokenObj.AccessToken, 10, "/", c.Request.URL.Hostname(), false, true)
 		c.Redirect(301, "http://localhost:8080/")
@@ -111,15 +112,18 @@ func getAuthTokenResponse(code string, clientID string, clientSecret string) (*t
 
 func getUserInfo(c *gin.Context) {
 	fmt.Println("Get User Info")
-	authCode := c.Request.Header.Get("auth_code")
+	//authCode := c.Request.Header.Get("auth_code")
+  authCode, err := c.Request.Cookie("auth_code")
 
-	userID := database.GetUserIdFromAuthToken(authCode)
+  if err != nil {
+    fmt.Printf("No auth_code Cookie found")
+  }
 
-	user, err := database.GetUserInfo(userID)
+	user, err := database.GetUserInfo(authCode.Value)
 
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			spotifyUser, err := getSpotifyUserProfile(authCode)
+			spotifyUser, err := getSpotifyUserProfile(authCode.Value)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "getSpotifyUserProfile broke with err: %v", err)
 			}
