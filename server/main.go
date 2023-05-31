@@ -117,6 +117,7 @@ func getUserInfo(c *gin.Context) {
 
   if err != nil {
     fmt.Printf("No auth_code Cookie found")
+    c.IndentedJSON(http.StatusForbidden, "Not Authorized")
   }
 
 	user, err := database.GetUserInfo(authCode.Value)

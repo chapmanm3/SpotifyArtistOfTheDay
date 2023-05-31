@@ -74,7 +74,7 @@ func GetUserInfo(authToken string) (*types.UserInfo, error) {
 		return nil, fmt.Errorf("No Auth Token Passed to GetUserInfo")
 	}
 
-	err := db.Where("AuthInfo.AccessToken = ?", authToken).First(&userInfo).Error
+  err := db.Joins("AuthInfo").Find(&userInfo, "access_token = ?", authToken).Error
 
 	if err != nil {
 		fmt.Println(err)
