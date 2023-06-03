@@ -5,7 +5,8 @@ go 1.20
 require (
 	SpotifyArtistOfTheDay/database v0.0.0-00010101000000-000000000000
 	SpotifyArtistOfTheDay/types v0.0.0-00010101000000-000000000000
-	github.com/gin-gonic/contrib v0.0.0-20221130124618-7e01895a63f2
+	github.com/gin-contrib/cors v1.4.0
+	github.com/gin-contrib/static v0.0.1
 	github.com/gin-gonic/gin v1.8.2
 	github.com/jackc/pgx v3.6.2+incompatible
 )

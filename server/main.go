@@ -11,7 +11,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gin-gonic/contrib/static"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx"
 
@@ -20,11 +21,16 @@ import (
 )
 
 func main() {
-  database.SeedDB()
+	database.SeedDB()
+
+  config := cors.DefaultConfig()
+  config.AllowOrigins = []string{"http://localhost:5173"}
+  config.AllowCredentials = true
 
 	router := gin.Default()
 
 	router.Use(static.Serve("/", static.LocalFile("./dist", true)))
+	router.Use(cors.New(config))
 
 	api := router.Group("/api")
 	{
@@ -69,10 +75,10 @@ func authCallback(c *gin.Context) {
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Couldn't resolve Spotify Profile'")
 		}
-    database.SetUserInfo(userProfile, tokenObj)
+		database.SetUserInfo(userProfile, tokenObj)
 
 		c.SetCookie("auth_code", tokenObj.AccessToken, 10, "/", c.Request.URL.Hostname(), false, true)
-		c.Redirect(301, "http://localhost:8080/")
+		c.Redirect(301, "http://localhost:5173/")
 		//c.IndentedJSON(http.StatusOK, gin.H{"auth_code": token, "user Profile": *userProfile})
 	} else {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "No Code Given"})
@@ -113,12 +119,12 @@ func getAuthTokenResponse(code string, clientID string, clientSecret string) (*t
 func getUserInfo(c *gin.Context) {
 	fmt.Println("Get User Info")
 	//authCode := c.Request.Header.Get("auth_code")
-  authCode, err := c.Request.Cookie("auth_code")
+	authCode, err := c.Request.Cookie("auth_code")
 
-  if err != nil {
-    fmt.Printf("No auth_code Cookie found")
-    c.IndentedJSON(http.StatusForbidden, "Not Authorized")
-  }
+	if err != nil {
+		fmt.Printf("No auth_code Cookie found")
+		c.IndentedJSON(http.StatusForbidden, "Not Authorized")
+	}
 
 	user, err := database.GetUserInfo(authCode.Value)
 
