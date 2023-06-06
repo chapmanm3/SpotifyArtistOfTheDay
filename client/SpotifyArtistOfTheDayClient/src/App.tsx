@@ -3,12 +3,14 @@ import reactLogo from './assets/react.svg'
 import './App.css'
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
-import getUserInfo from './api/getUserInfo'
+import handleLogin from './api/handleLogin'
 import Header from './components/Header/header'
+import initInterceptors from './api/axios/initInterceptors'
 
 const queryClient = new QueryClient();
 
 const AppWrappedWProviders = () => {
+  initInterceptors()
   return (
     <QueryClientProvider client={queryClient}>
       <App />
@@ -18,11 +20,6 @@ const AppWrappedWProviders = () => {
 
 function App() {
   const [count, setCount] = useState(0)
-
-  const handleLoginClick = () => {
-    window.localStorage.setItem("is_authed", "true")
-    window.location.href = "http://localhost:8080/api/login"
-  }
 
   return (
     <div className="App">
@@ -41,13 +38,9 @@ function App() {
           count is {count}
         </button>
         <button
-          onClick={handleLoginClick}
+          onClick={handleLogin}
         >
           Test Login
-        </button>
-        <button
-          onClick={() => getUserInfo()}>
-          Get User Info
         </button>
         <p>
           Edit <code>src/App.tsx</code> and save to test HMR

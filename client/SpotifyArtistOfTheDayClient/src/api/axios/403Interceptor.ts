@@ -1,8 +1,10 @@
 import axios from 'axios'
 
-axios.interceptors.response.use((resp) => {
-  if (resp.status == 403) {
+export default function FourOhThreeInterceptor() {
+  axios.interceptors.response.use(function(resp) {
+    return resp;
+  }, function(err) {
     window.localStorage.setItem("is_authed", "false")
-  }
-  return resp
-})
+    return err
+  })
+}
