@@ -18,6 +18,7 @@ import (
 
 	"SpotifyArtistOfTheDay/database"
 	"SpotifyArtistOfTheDay/types"
+  "SpotifyArtistOfTheDay/handlers"
 )
 
 func main() {

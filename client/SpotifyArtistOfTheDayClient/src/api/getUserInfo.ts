@@ -1,6 +1,6 @@
 import axios from "axios"
 
-interface UserInfoObj {
+export interface UserInfoObj {
   ID: number,
   CreatedAt: string,
   UpdatedAt: string,

@@ -44,6 +44,29 @@ type UserProfileResponse struct {
 	Uri             string              `json:"uri"`
 }
 
+type ArtistObject struct {
+	ExternalUrls ExternalUrlsBody `json:"external_urls"`
+	Followers    FollowersBody    `json:"followers"`
+	Genres       []string         `json:"genres"`
+	Href         string           `json:"string"`
+	Id           string           `json:"id"`
+	Images       []ImagesBody     `json:"images"`
+	Name         string           `json:"name"`
+	Popularity   int              `json:"popularity"`
+	Type         string           `json:"type"`
+	Uri          string           `json:"uri"`
+}
+
+type UsersTopArtistsResponse struct {
+	Href     string         `json:"href"`
+	Limit    int            `json:"limit"`
+	Next     string         `json:"next"`
+	Offset   int            `json:"offset"`
+	Previous int            `json:"previous"`
+	Total    int            `json:"total"`
+	Items    []ArtistObject `json:"items"`
+}
+
 type UserInfo struct {
 	gorm.Model
 	Country         string
@@ -64,4 +87,13 @@ type AuthInfo struct {
 	Scope        string
 	ExpiresIn    int
 	RefreshToken string
+}
+
+type ArtistInfo struct {
+	gorm.Model
+	SpotifyUrl string
+	SpotifyId  string
+	Image      string
+	Name       string
+	Uri        string
 }

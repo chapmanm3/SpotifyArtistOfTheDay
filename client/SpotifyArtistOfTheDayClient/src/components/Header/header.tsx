@@ -2,6 +2,9 @@ import { useQuery } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
 import getUserInfo from "../../api/getUserInfo"
 import LoginButton from "./loginButton"
+import UserInfo from "./userInfo"
+
+import './header.css'
 
 function Header() {
 
@@ -23,11 +26,12 @@ function Header() {
   })
 
   return (
-    isAuthed ?
-      <div>
-        Hello: {query.data?.user_info.DisplayName}
-      </div> :
-      <LoginButton />
+    <div className="header-children">
+      {(isAuthed && query.data) ?
+        <UserInfo user={query.data.user_info} /> :
+        <LoginButton />
+      }
+    </div>
   )
 }
 

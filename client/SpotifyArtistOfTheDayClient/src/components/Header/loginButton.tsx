@@ -4,7 +4,10 @@ import './loginButton.css'
 function LoginButton() {
 
   return (
-    <button onClick={handleLogin}> 
+    <button
+      className="login-button"
+      onClick={handleLogin}
+    >
       Login
     </button>
   )
