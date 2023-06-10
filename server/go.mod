@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	SpotifyArtistOfTheDay/database v0.0.0-00010101000000-000000000000
+	SpotifyArtistOfTheDay/handlers v0.0.0-00010101000000-000000000000
 	SpotifyArtistOfTheDay/types v0.0.0-00010101000000-000000000000
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-contrib/static v0.0.1
@@ -50,3 +51,5 @@ replace SpotifyArtistOfTheDay/server => ../database
 replace SpotifyArtistOfTheDay/database => ./database
 
 replace SpotifyArtistOfTheDay/types => ./types
+
+replace SpotifyArtistOfTheDay/handlers => ./handlers

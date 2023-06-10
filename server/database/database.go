@@ -83,3 +83,18 @@ func GetUserInfo(authToken string) (*types.UserInfo, error) {
 
 	return &userInfo, nil
 }
+
+func SetArtistInfo(artist *types.ArtistObject) {
+  db := openDB()
+
+  artistInfoInsert := types.ArtistInfo{
+    SpotifyUrl: artist.ExternalUrls.Spotify,
+    SpotifyId: artist.Id,
+    Image: artist.Images[0].Url,
+    Name: artist.Name,
+    Uri: artist.Uri,
+  }
+
+  db.Create(&artistInfoInsert)
+  db.Save(&artistInfoInsert)
+}

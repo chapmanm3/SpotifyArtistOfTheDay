@@ -38,6 +38,7 @@ func main() {
 		api.GET("/login", authUser)
 		api.GET("/callback", authCallback)
 		api.GET("/userInfo", getUserInfo)
+    api.GET("/topArtists", handlers.GetUsersTopArtists)
 	}
 
 	//database.GetUserInfo()
