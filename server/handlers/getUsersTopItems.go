@@ -1,37 +1,72 @@
 package handlers
 
 import (
-	"SpotifyArtistOfTheDay/database"
-	"SpotifyArtistOfTheDay/types"
+	"SpotifyArtistofTheDay/main/database"
+	"SpotifyArtistofTheDay/main/types"
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"net/url"
+
+	"github.com/gin-gonic/gin"
+  "gorm.io/gorm"
 )
 
-func GetUsersTopArtists(authToken string) {
+func (h DBHandlerService) GetUsersTopArtists(c *gin.Context) {
+	authCode, err := c.Request.Cookie("auth_code")
+	if err != nil {
+		fmt.Printf("No auth_code Cookie found")
+		c.IndentedJSON(http.StatusForbidden, "Not Authorized")
+	}
+	authToken := authCode.Value
 
 	usersTopArtists, err := getUsersTopArtistsQuery(authToken, 0)
 	if err != nil {
 		fmt.Println(err)
 		//return nil, err
 	}
-  writeArtistsToDB(usersTopArtists.Items)
+
+	var usersTopArtistsTotal = usersTopArtists.Items[:]
+	writeArtistsToDB(h.DB, usersTopArtistsTotal)
 
 	totalResults := usersTopArtists.Total
+  fmt.Printf("UsersTopArtistsTotal: %v", usersTopArtistsTotal)
 	for currentOffset := 50; currentOffset <= totalResults; currentOffset += 50 {
-    queryResults, err := getUsersTopArtistsQuery(authToken, currentOffset)
-    if err != nil {
-      fmt.Println(err)
-    }
-    writeArtistsToDB(queryResults.Items)
+		fmt.Printf("Current Offset: %v \n Total Results: %v\n", currentOffset, totalResults)
+		queryResults, err := getUsersTopArtistsQuery(authToken, currentOffset)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		usersTopArtistsTotal = append(usersTopArtistsTotal, queryResults.Items...)
+		writeArtistsToDB(h.DB, queryResults.Items)
 	}
+
+  c.IndentedJSON(http.StatusOK, gin.H{"artist": transformArtistObject(getRandomArtists(usersTopArtistsTotal))})
 }
 
-func writeArtistsToDB(artists []types.ArtistObject) {
+func getRandomArtists(artists []types.ArtistObject) types.ArtistObject {
+  fmt.Printf("Artists Length: %v", len(artists))
+	randIndex := rand.Intn(len(artists))
+	fmt.Printf("Random Artist: %v \n", artists[randIndex])
+  return artists[randIndex]
+}
+
+func transformArtistObject(artist types.ArtistObject) types.ArtistInfo {
+  return types.ArtistInfo{
+    SpotifyUrl: artist.ExternalUrls.Spotify,
+    SpotifyId: artist.Id,
+    Image: artist.Images[0].Url,
+    Name: artist.Name,
+    Uri: artist.Uri,
+  }
+}
+
+func writeArtistsToDB(db *gorm.DB, artists []types.ArtistObject) {
 	for i := 0; i < len(artists); i++ {
-		database.SetArtistInfo(&artists[i])
+		database.SetArtistInfo(db, &artists[i])
 	}
 }
 

@@ -1,7 +1,7 @@
 package database
 
 import (
-	"SpotifyArtistOfTheDay/types"
+	"SpotifyArtistofTheDay/main/types"
 	"fmt"
 	"os"
 
@@ -9,19 +9,20 @@ import (
 	"gorm.io/gorm"
 )
 
-func openDB() gorm.DB {
+func openDB() *gorm.DB {
 	db, err := gorm.Open(postgres.Open(os.Getenv("SAD_DB_GORM_STRING")), &gorm.Config{})
 	if err != nil {
 		panic("Failed to Connect to DB")
 	}
-	return *db
+	return db
 }
 
-func SeedDB() {
+func InitDB() *gorm.DB {
 	db := openDB()
 
 	db.AutoMigrate(&types.UserInfo{})
 	db.AutoMigrate(&types.AuthInfo{})
+	db.AutoMigrate(&types.ArtistInfo{})
 
 	db.Create(&types.UserInfo{
 		Country:         "US",
@@ -39,11 +40,11 @@ func SeedDB() {
 			RefreshToken: "testRefreshToken",
 		},
 	})
+
+  return db
 }
 
-func SetUserInfo(userResponse *types.UserProfileResponse, authResponse *types.AuthTokenResponse) {
-	db := openDB()
-
+func SetUserInfo(db *gorm.DB, userResponse *types.UserProfileResponse, authResponse *types.AuthTokenResponse) {
 	userInfoInsert := types.UserInfo{
 		Country:         userResponse.Country,
 		DisplayName:     userResponse.DisplayName,
@@ -65,8 +66,7 @@ func SetUserInfo(userResponse *types.UserProfileResponse, authResponse *types.Au
 	db.Save(&userInfoInsert)
 }
 
-func GetUserInfo(authToken string) (*types.UserInfo, error) {
-	db := openDB()
+func  GetUserInfo(db *gorm.DB, authToken string) (*types.UserInfo, error) {
 	var userInfo types.UserInfo
 	fmt.Printf("authToken from GetUserInfo: %s", authToken)
 
@@ -74,7 +74,7 @@ func GetUserInfo(authToken string) (*types.UserInfo, error) {
 		return nil, fmt.Errorf("No Auth Token Passed to GetUserInfo")
 	}
 
-  err := db.Joins("AuthInfo").Find(&userInfo, "access_token = ?", authToken).Error
+	err := db.Joins("AuthInfo").Find(&userInfo, "access_token = ?", authToken).Error
 
 	if err != nil {
 		fmt.Println(err)
@@ -84,17 +84,15 @@ func GetUserInfo(authToken string) (*types.UserInfo, error) {
 	return &userInfo, nil
 }
 
-func SetArtistInfo(artist *types.ArtistObject) {
-  db := openDB()
+func  SetArtistInfo(db *gorm.DB, artist *types.ArtistObject) {
+	artistInfoInsert := types.ArtistInfo{
+		SpotifyUrl: artist.ExternalUrls.Spotify,
+		SpotifyId:  artist.Id,
+		Image:      artist.Images[0].Url,
+		Name:       artist.Name,
+		Uri:        artist.Uri,
+	}
 
-  artistInfoInsert := types.ArtistInfo{
-    SpotifyUrl: artist.ExternalUrls.Spotify,
-    SpotifyId: artist.Id,
-    Image: artist.Images[0].Url,
-    Name: artist.Name,
-    Uri: artist.Uri,
-  }
-
-  db.Create(&artistInfoInsert)
-  db.Save(&artistInfoInsert)
+	db.Create(&artistInfoInsert)
+	db.Save(&artistInfoInsert)
 }
