@@ -34,9 +34,9 @@ func (h DBHandlerService) AuthCallback(c *gin.Context) {
 		}
 		database.SetUserInfo(h.DB, userProfile, tokenObj)
 
-		c.SetCookie("auth_code", tokenObj.AccessToken, 10, "/", c.Request.URL.Hostname(), false, true)
+		c.SetCookie("auth_code", tokenObj.AccessToken, 10, "/", c.Request.URL.Hostname(), false, false)
 		c.Redirect(301, "http://localhost:5173/")
-		//c.IndentedJSON(http.StatusOK, gin.H{"auth_code": token, "user Profile": *userProfile})
+		//c.IndentedJSON(http.StatusOK, gin.H{"auth_code": tokenObj.AccessToken, "user Profile": *userProfile})
 	} else {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "No Code Given"})
 	}
