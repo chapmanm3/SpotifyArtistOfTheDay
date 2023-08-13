@@ -24,6 +24,7 @@ func main() {
 
 	api := router.Group("/api")
 	{
+    api.GET("/healthCheck", h.GetHealthCheck)
 		api.GET("/login", h.AuthUser)
 		api.GET("/callback", h.AuthCallback)
 		api.GET("/userInfo", h.GetUserInfo)
