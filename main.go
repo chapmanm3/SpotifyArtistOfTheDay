@@ -1,20 +1,32 @@
 package main
 
 import (
+	"fmt"
+	"os"
+	"strings"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 
 	"SpotifyArtistofTheDay/main/database"
-  "SpotifyArtistofTheDay/main/handlers"
+	"SpotifyArtistofTheDay/main/handlers"
 )
 
 func main() {
+
+  //Load Env File 
+  err := godotenv.Load()
+  if err != nil {
+    fmt.Println("Unable to load .env file")
+  }
   DB := database.InitDB()
   h := handlers.New(DB)
 
   config := cors.DefaultConfig()
-  config.AllowOrigins = []string{"http://localhost:5173"}
+  config.AllowOrigins = strings.Split(os.Getenv("ALLOW_ORIGINS"), ",")
+  //config.AllowOrigins = []string{"http://localhost:5173"}
   config.AllowCredentials = true
 
 	router := gin.Default()
