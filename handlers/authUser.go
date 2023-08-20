@@ -11,9 +11,10 @@ func (h DBHandlerService) AuthUser(c *gin.Context) {
 	fmt.Println("In Auth")
 
 	clientID := os.Getenv("SAD_CLIENT_ID")
+  serviceUrl := os.Getenv("SERVICE_URL")
 	fmt.Printf("clientID: %v", clientID)
 	//clientSecret := os.Getenv("SAD_CLIENT_SECRET")
-	redirectUri := "http://localhost:8080/api/callback"
+  redirectUri := fmt.Sprintf("%s/api/callback", serviceUrl)
 	fmt.Printf("redirect URI: %v", redirectUri)
 	scope := "user-read-private user-read-email user-top-read"
 

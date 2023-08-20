@@ -20,6 +20,13 @@ func (h DBHandlerService) AuthCallback(c *gin.Context) {
 
 	clientID := os.Getenv("SAD_CLIENT_ID")
 	clientSecret := os.Getenv("SAD_CLIENT_SECRET")
+  serviceHostName := os.Getenv("AUTH_RETURN_URL")
+
+  fmt.Printf("Service Hostname is %s \n", serviceHostName)
+
+  if serviceHostName == "" {
+    fmt.Println("No Hostname Header Found")
+  }
 
 	if code != "" {
 		tokenObj, err := getAuthTokenResponse(code, clientID, clientSecret)
@@ -35,7 +42,7 @@ func (h DBHandlerService) AuthCallback(c *gin.Context) {
 		database.SetUserInfo(h.DB, userProfile, tokenObj)
 
 		c.SetCookie("auth_code", tokenObj.AccessToken, 10, "/", c.Request.URL.Hostname(), false, false)
-		c.Redirect(301, "http://localhost:5173/")
+		c.Redirect(301, serviceHostName)
 		//c.IndentedJSON(http.StatusOK, gin.H{"auth_code": tokenObj.AccessToken, "user Profile": *userProfile})
 	} else {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "No Code Given"})
@@ -44,10 +51,12 @@ func (h DBHandlerService) AuthCallback(c *gin.Context) {
 
 func getAuthTokenResponse(code string, clientID string, clientSecret string) (*types.AuthTokenResponse, error) {
 
+  serviceHostName := os.Getenv("SERVICE_URL")
+
 	form := url.Values{}
 	form.Add("grant_type", "authorization_code")
 	form.Add("code", code)
-	form.Add("redirect_uri", "http://localhost:8080/api/callback")
+	form.Add("redirect_uri", fmt.Sprintf("%s/api/callback", serviceHostName))
 
 	client := &http.Client{}
 	req, err := http.NewRequest(
