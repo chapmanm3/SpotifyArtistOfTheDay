@@ -56,7 +56,7 @@ func getAuthTokenResponse(code string, clientID string, clientSecret string) (*t
 	form := url.Values{}
 	form.Add("grant_type", "authorization_code")
 	form.Add("code", code)
-	form.Add("redirect_uri", fmt.Sprintf("%s/api/callback", serviceHostName))
+  form.Add("redirect_uri", fmt.Sprintf("%s/api/callback", serviceHostName))
 
 	client := &http.Client{}
 	req, err := http.NewRequest(
