@@ -24,23 +24,6 @@ func InitDB() *gorm.DB {
 	db.AutoMigrate(&types.AuthInfo{})
 	db.AutoMigrate(&types.ArtistInfo{})
 
-	db.Create(&types.UserInfo{
-		Country:         "US",
-		DisplayName:     "Test",
-		Email:           "testEmail",
-		ExplicitContent: false,
-		Followers:       1,
-		ImageUrl:        "testURL",
-		Uri:             "testUri",
-		AuthInfo: types.AuthInfo{
-			AccessToken:  "testToken",
-			TokenType:    "testTokenType",
-			Scope:        "testTokenScope",
-			ExpiresIn:    15,
-			RefreshToken: "testRefreshToken",
-		},
-	})
-
   return db
 }
 
