@@ -49,7 +49,7 @@ func SetUserInfo(db *gorm.DB, userResponse *types.UserProfileResponse, authRespo
 	db.Save(&userInfoInsert)
 }
 
-func  GetUserInfo(db *gorm.DB, authToken string) (*types.UserInfo, error) {
+func GetUserInfo(db *gorm.DB, authToken string) (*types.UserInfo, error) {
 	var userInfo types.UserInfo
 	fmt.Printf("authToken from GetUserInfo: %s", authToken)
 
@@ -67,7 +67,19 @@ func  GetUserInfo(db *gorm.DB, authToken string) (*types.UserInfo, error) {
 	return &userInfo, nil
 }
 
-func  SetArtistInfo(db *gorm.DB, artist *types.ArtistObject) {
+func GetAuthInfo(db *gorm.DB, authToken string) (*types.AuthInfo, error) {
+  var authInfo types.AuthInfo
+
+  err := db.Find(&authInfo, "access_token = ?", authToken).Error
+
+  if err != nil {
+    return nil, err
+  }
+
+  return &authInfo, nil
+}
+
+func SetArtistInfo(db *gorm.DB, artist *types.ArtistObject) {
 	artistInfoInsert := types.ArtistInfo{
 		SpotifyUrl: artist.ExternalUrls.Spotify,
 		SpotifyId:  artist.Id,
