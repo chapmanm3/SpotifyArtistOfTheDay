@@ -77,6 +77,7 @@ type UserInfo struct {
 	ImageUrl        string
 	Uri             string
 	AuthInfo        AuthInfo
+	UsersTopArtists []string
 }
 
 type AuthInfo struct {
