@@ -77,7 +77,7 @@ type UserInfo struct {
 	ImageUrl        string
 	Uri             string
 	AuthInfo        AuthInfo
-	UsersTopArtists []string
+	Artists         []*ArtistInfo `gorm:"many2many:user_artists;"`
 }
 
 type AuthInfo struct {

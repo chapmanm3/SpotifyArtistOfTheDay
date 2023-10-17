@@ -11,7 +11,7 @@ import (
 	"net/url"
 
 	"github.com/gin-gonic/gin"
-  "gorm.io/gorm"
+	"gorm.io/gorm"
 )
 
 func (h DBHandlerService) GetUsersTopArtists(c *gin.Context) {
@@ -22,52 +22,76 @@ func (h DBHandlerService) GetUsersTopArtists(c *gin.Context) {
 	}
 	authToken := authCode.Value
 
-	usersTopArtists, err := getUsersTopArtistsQuery(authToken, 0)
+	c.IndentedJSON(http.StatusOK, gin.H{"artist": transformArtistObject(getRandomArtists(usersTopArtistsTotal))})
+}
+
+func getUsersTopItems(db *gorm.DB, authToken string) ([]*types.ArtistInfo, error) {
+	userId, err := database.GetUserID(db, authToken)
+	if err != nil {
+		fmt.Printf("User ID Not Found")
+		return nil, err
+	}
+
+	items, err := database.GetUsersTopArtists(db, uint(*userId))
+	if err != nil {
+		fmt.Printf("User ID Not Found")
+		return nil, err
+	}
+	if len(items) > 0 {
+		return items, nil
+	}
+
+	itemsQuery, err := getUsersTopArtistsQuery(authToken, 0)
 	if err != nil {
 		fmt.Println(err)
-		//return nil, err
+		return nil, err
 	}
 
-	var usersTopArtistsTotal = usersTopArtists.Items[:]
-	writeArtistsToDB(h.DB, usersTopArtistsTotal)
+	var itemsQueryTotal = itemsQuery.Items[:]
+	writeArtistsToDB(db, itemsQueryTotal)
 
-	totalResults := usersTopArtists.Total
-  fmt.Printf("UsersTopArtistsTotal: %v", usersTopArtistsTotal)
-	for currentOffset := 50; currentOffset <= totalResults; currentOffset += 50 {
-		fmt.Printf("Current Offset: %v \n Total Results: %v\n", currentOffset, totalResults)
-		queryResults, err := getUsersTopArtistsQuery(authToken, currentOffset)
-		if err != nil {
-			fmt.Println(err)
-		}
+  x := mapArtistResponseToArtistInfo(itemsQueryTotal)
+  writeArtistsToUser(db, x, *userId)
 
-		usersTopArtistsTotal = append(usersTopArtistsTotal, queryResults.Items...)
-		writeArtistsToDB(h.DB, queryResults.Items)
-	}
-
-  c.IndentedJSON(http.StatusOK, gin.H{"artist": transformArtistObject(getRandomArtists(usersTopArtistsTotal))})
+  return x, nil
 }
 
 func getRandomArtists(artists []types.ArtistObject) types.ArtistObject {
-  fmt.Printf("Artists Length: %v", len(artists))
+	fmt.Printf("Artists Length: %v", len(artists))
 	randIndex := rand.Intn(len(artists))
 	fmt.Printf("Random Artist: %v \n", artists[randIndex])
-  return artists[randIndex]
+	return artists[randIndex]
 }
 
 func transformArtistObject(artist types.ArtistObject) types.ArtistInfo {
-  return types.ArtistInfo{
-    SpotifyUrl: artist.ExternalUrls.Spotify,
-    SpotifyId: artist.Id,
-    Image: artist.Images[0].Url,
-    Name: artist.Name,
-    Uri: artist.Uri,
-  }
+	return types.ArtistInfo{
+		SpotifyUrl: artist.ExternalUrls.Spotify,
+		SpotifyId:  artist.Id,
+		Image:      artist.Images[0].Url,
+		Name:       artist.Name,
+		Uri:        artist.Uri,
+	}
 }
 
 func writeArtistsToDB(db *gorm.DB, artists []types.ArtistObject) {
 	for i := 0; i < len(artists); i++ {
 		database.SetArtistInfo(db, &artists[i])
 	}
+}
+
+func writeArtistsToUser(db *gorm.DB, artists []types.ArtistInfo, userId int) {
+	for i := 0; i < len(artists); i++ {
+		database.SetUsersTopArtists(db, userId, artists)
+	}
+}
+
+
+func mapArtistResponseToArtistInfo(artists []types.ArtistObject) []*types.ArtistInfo {
+  x := make([]*types.ArtistInfo, 0)
+  for i := 0; i < len(artists); i++ {
+    x[i] = transformArtistObject(artists[i])
+  }
+  return x
 }
 
 func getUsersTopArtistsQuery(authToken string, offset int) (*types.UsersTopArtistsResponse, error) {

@@ -28,13 +28,17 @@ func InitDB() *gorm.DB {
 	return db
 }
 
-func SetUsersTopArtists(db *gorm.DB, userId int, artists []string) {
-	db.Model(&types.UserInfo{}).Where("id = ?", userId).Update("users_top_artists", artists)
+func SetUsersTopArtists(db *gorm.DB, userId int, artists []types.ArtistInfo) {
+	db.Model(&types.UserInfo{}).Where("id = ?", userId).Association("Artists").Append(artists)
 }
 
-func GetUsersTopArtists(db *gorm.DB, userId int) (*[]string, error) {
-	result := db.First(&types.UserInfo{Model: gorm.Model{ID: uint(userId)}})
-	return
+func GetUsersTopArtists(db *gorm.DB, userId uint) ([]*types.ArtistInfo, error) {
+  user := types.UserInfo{Model: gorm.Model{ID: uint(userId)}}
+	result := db.Preload("Artists").First(&user)
+  if result.Error != nil {
+    return nil, result.Error
+  }
+	return user.Artists, nil
 }
 
 func SetUserInfo(db *gorm.DB, userResponse *types.UserProfileResponse, authResponse *types.AuthTokenResponse) {
