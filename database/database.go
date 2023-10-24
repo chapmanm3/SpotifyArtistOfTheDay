@@ -28,8 +28,8 @@ func InitDB() *gorm.DB {
 	return db
 }
 
-func SetUsersTopArtists(db *gorm.DB, userId int, artists []types.ArtistInfo) {
-	db.Model(&types.UserInfo{}).Where("id = ?", userId).Association("Artists").Append(artists)
+func SetUsersTopArtists(db *gorm.DB, userId int, artists []*types.ArtistInfo) {
+	db.Model(&types.UserInfo{}).Where("id = ?", userId).Association("ArtistsInfo").Append(artists)
 }
 
 func GetUsersTopArtists(db *gorm.DB, userId uint) ([]*types.ArtistInfo, error) {
