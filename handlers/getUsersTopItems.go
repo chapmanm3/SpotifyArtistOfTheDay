@@ -54,7 +54,7 @@ func getUsersTopItems(db *gorm.DB, authToken string) ([]*types.ArtistInfo, error
 	}
 
 	var itemsQueryTotal = itemsQuery.Items[:]
-  fmt.Println(itemsQueryTotal)
+  fmt.Println("Writting Artists to DB")
 	writeArtistsToDB(db, itemsQueryTotal)
 
 	x := mapArtistResponseToArtistInfo(itemsQueryTotal)
@@ -65,9 +65,8 @@ func getUsersTopItems(db *gorm.DB, authToken string) ([]*types.ArtistInfo, error
 
 //Generics baby!
 func getRandomArtists[K any] (artists []*K) *K {
-	fmt.Printf("Artists Length: %v", len(artists))
 	randIndex := rand.Intn(len(artists))
-	fmt.Printf("Random Artist: %v \n", artists[randIndex])
+	fmt.Printf("Random Artist: %+v \n", artists[randIndex])
 	return artists[randIndex]
 }
 
@@ -98,11 +97,9 @@ func writeArtistsToUser(db *gorm.DB, artists []*types.ArtistInfo, userId int) {
 func mapArtistResponseToArtistInfo(artists []types.ArtistObject) []*types.ArtistInfo {
 	x := make([]*types.ArtistInfo, 0)
   if len(artists) == 0 {
-    fmt.Println("Here Fucker")
     fmt.Println(fmt.Errorf("Empty Array Passed"))
   }
   for _, value := range artists {
-    fmt.Printf("%+v", value)
     x = append(x, transformArtistObject(&value))
 	}
 	return x
@@ -141,7 +138,6 @@ func getUsersTopArtistsQuery(authToken string, offset int) (*types.UsersTopArtis
 		fmt.Println(err)
 		return nil, err
 	}
-	fmt.Println(body)
 
 	json.Unmarshal(body, usersTopArtists)
 
