@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -22,16 +24,17 @@ func (h DBHandlerService) GetUsersTopArtists(c *gin.Context) {
 	}
 	authToken := authCode.Value
 
-  usersTopItems, err := getUsersTopItems(h.DB, authToken)
+	usersTopItems, err := getUsersTopItems(h.DB, authToken)
 
-  if err != nil {
-    c.IndentedJSON(http.StatusInternalServerError, gin.H{})
-  }
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{})
+    return;
+	}
 
-	c.IndentedJSON(http.StatusOK, gin.H{"artist": *getRandomArtists(usersTopItems)})
+	c.IndentedJSON(http.StatusOK, gin.H{"artist": getRandomArtists(usersTopItems)})
 }
 
-func getUsersTopItems(db *gorm.DB, authToken string) ([]*types.ArtistInfo, error) {
+func getUsersTopItems(db *gorm.DB, authToken string) ([]types.ArtistInfo, error) {
 	userId, err := database.GetUserID(db, authToken)
 	if err != nil {
 		fmt.Printf("User ID Not Found")
@@ -40,11 +43,18 @@ func getUsersTopItems(db *gorm.DB, authToken string) ([]*types.ArtistInfo, error
 
 	items, err := database.GetUsersTopArtists(db, uint(*userId))
 	if err != nil {
-		fmt.Printf("User ID Not Found")
+		fmt.Printf("User ID Not Found \n")
+    fmt.Println(err)
 		return nil, err
 	}
-	if len(items) > 0 {
-		return items, nil
+
+  fmt.Printf("Len Items: %v \n", len(items))
+	if items != nil && len(items) > 0{
+		staleData := items[0].UpdatedAt.Before(time.Now().AddDate(0, 0, -7))
+
+		if !staleData {
+			return items, nil
+		}
 	}
 
 	itemsQuery, err := getUsersTopArtistsQuery(authToken, 0)
@@ -54,7 +64,7 @@ func getUsersTopItems(db *gorm.DB, authToken string) ([]*types.ArtistInfo, error
 	}
 
 	var itemsQueryTotal = itemsQuery.Items[:]
-  fmt.Println("Writting Artists to DB")
+	fmt.Println("Writting Artists to DB")
 	writeArtistsToDB(db, itemsQueryTotal)
 
 	x := mapArtistResponseToArtistInfo(itemsQueryTotal)
@@ -63,15 +73,18 @@ func getUsersTopItems(db *gorm.DB, authToken string) ([]*types.ArtistInfo, error
 	return x, nil
 }
 
-//Generics baby!
-func getRandomArtists[K any] (artists []*K) *K {
+// Generics baby!
+func getRandomArtists[K any](artists []K) K {
+  if len(artists) == 0 {
+    log.Panic("Received an Array of len 0")
+  }
 	randIndex := rand.Intn(len(artists))
 	fmt.Printf("Random Artist: %+v \n", artists[randIndex])
 	return artists[randIndex]
 }
 
-func transformArtistObject(artist *types.ArtistObject) *types.ArtistInfo {
-  var artistInfo types.ArtistInfo
+func transformArtistObject(artist types.ArtistObject) types.ArtistInfo {
+	var artistInfo types.ArtistInfo
 	artistInfo = types.ArtistInfo{
 		SpotifyUrl: artist.ExternalUrls.Spotify,
 		SpotifyId:  artist.Id,
@@ -79,7 +92,7 @@ func transformArtistObject(artist *types.ArtistObject) *types.ArtistInfo {
 		Name:       artist.Name,
 		Uri:        artist.Uri,
 	}
-  return &artistInfo
+	return artistInfo
 }
 
 func writeArtistsToDB(db *gorm.DB, artists []types.ArtistObject) {
@@ -88,19 +101,17 @@ func writeArtistsToDB(db *gorm.DB, artists []types.ArtistObject) {
 	}
 }
 
-func writeArtistsToUser(db *gorm.DB, artists []*types.ArtistInfo, userId int) {
-	for i := 0; i < len(artists); i++ {
-		database.SetUsersTopArtists(db, userId, artists)
-	}
+func writeArtistsToUser(db *gorm.DB, artists []types.ArtistInfo, userId int) {
+	database.SetUsersTopArtists(db, userId, artists)
 }
 
-func mapArtistResponseToArtistInfo(artists []types.ArtistObject) []*types.ArtistInfo {
-	x := make([]*types.ArtistInfo, 0)
-  if len(artists) == 0 {
-    fmt.Println(fmt.Errorf("Empty Array Passed"))
-  }
-  for _, value := range artists {
-    x = append(x, transformArtistObject(&value))
+func mapArtistResponseToArtistInfo(artists []types.ArtistObject) []types.ArtistInfo {
+	x := make([]types.ArtistInfo, 0)
+	if len(artists) == 0 {
+		fmt.Println(fmt.Errorf("Empty Array Passed"))
+	}
+	for _, value := range artists {
+		x = append(x, transformArtistObject(value))
 	}
 	return x
 }

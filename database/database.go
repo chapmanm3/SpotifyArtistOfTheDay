@@ -28,17 +28,22 @@ func InitDB() *gorm.DB {
 	return db
 }
 
-func SetUsersTopArtists(db *gorm.DB, userId int, artists []*types.ArtistInfo) {
-	db.Model(&types.UserInfo{}).Where("id = ?", userId).Association("ArtistsInfo").Append(artists)
+func SetUsersTopArtists(db *gorm.DB, userId int, artists []types.ArtistInfo) {
+  user := &types.UserInfo{
+    Model: gorm.Model{ ID: uint(userId)},
+    Artists: artists,
+  }
+	db.Save(user)
 }
 
-func GetUsersTopArtists(db *gorm.DB, userId uint) ([]*types.ArtistInfo, error) {
-  user := types.UserInfo{Model: gorm.Model{ID: uint(userId)}}
-	result := db.Preload("Artists").First(&user)
-  if result.Error != nil {
-    return nil, result.Error
-  }
-	return user.Artists, nil
+func GetUsersTopArtists(db *gorm.DB, userId uint) ([]types.ArtistInfo, error) {
+	user := types.UserInfo{Model: gorm.Model{ID: uint(userId)}}
+  var artists []types.ArtistInfo
+  err := db.Model(&user).Association("Artists").Find(&artists)
+	if err != nil {
+		return nil, err
+	}
+	return artists, nil
 }
 
 func SetUserInfo(db *gorm.DB, userResponse *types.UserProfileResponse, authResponse *types.AuthTokenResponse) {
@@ -57,6 +62,7 @@ func SetUserInfo(db *gorm.DB, userResponse *types.UserProfileResponse, authRespo
 			ExpiresIn:    authResponse.ExpiresIn,
 			RefreshToken: authResponse.RefreshToken,
 		},
+		Artists: []types.ArtistInfo{},
 	}
 
 	db.Create(&userInfoInsert)
@@ -65,7 +71,6 @@ func SetUserInfo(db *gorm.DB, userResponse *types.UserProfileResponse, authRespo
 
 func GetUserInfo(db *gorm.DB, authToken string) (*types.UserInfo, error) {
 	var userInfo types.UserInfo
-	fmt.Printf("authToken from GetUserInfo: %s", authToken)
 
 	if authToken == "" {
 		return nil, fmt.Errorf("No Auth Token Passed to GetUserInfo")
