@@ -8,6 +8,7 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func openDB() *gorm.DB {
@@ -29,17 +30,19 @@ func InitDB() *gorm.DB {
 }
 
 func SetUsersTopArtists(db *gorm.DB, userId int, artists []types.ArtistInfo) {
-  user := &types.UserInfo{
-    Model: gorm.Model{ ID: uint(userId)},
-    Artists: artists,
-  }
-	db.Save(user)
+	user := &types.UserInfo{
+		Model:   gorm.Model{ID: uint(userId)},
+		Artists: artists,
+	}
+	db.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&user)
+	//db.Update("Artists", artists).Where(user)
+	//db.Save(&user)
 }
 
 func GetUsersTopArtists(db *gorm.DB, userId uint) ([]types.ArtistInfo, error) {
 	user := types.UserInfo{Model: gorm.Model{ID: uint(userId)}}
-  var artists []types.ArtistInfo
-  err := db.Model(&user).Association("Artists").Find(&artists)
+	var artists []types.ArtistInfo
+	err := db.Model(&user).Association("Artists").Find(&artists)
 	if err != nil {
 		return nil, err
 	}
@@ -77,6 +80,7 @@ func GetUserInfo(db *gorm.DB, authToken string) (*types.UserInfo, error) {
 	}
 
 	authInfo, authErr := GetAuthInfo(db, authToken)
+  fmt.Printf("Auth Info: %v \n", authInfo)
 
 	if authErr != nil {
 		fmt.Println(authErr)
@@ -97,6 +101,7 @@ func GetAuthInfo(db *gorm.DB, authToken string) (*types.AuthInfo, error) {
 	var authInfo types.AuthInfo
 
 	err := db.Find(&authInfo, "access_token = ?", authToken).Error
+  fmt.Printf("Auth Token: %v \n", authInfo)
 
 	if err != nil {
 		return nil, err
