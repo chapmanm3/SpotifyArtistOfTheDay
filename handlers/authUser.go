@@ -8,8 +8,6 @@ import (
 
 func (h DBHandlerService) AuthUser(c *gin.Context) {
 
-	fmt.Println("In Auth")
-
 	clientID := os.Getenv("SAD_CLIENT_ID")
   serviceUrl := os.Getenv("SERVICE_URL")
 	fmt.Printf("clientID: %v", clientID)

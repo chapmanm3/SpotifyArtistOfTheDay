@@ -112,11 +112,8 @@ func getSpotifyUserProfile(authToken string) (*types.UserProfileResponse, error)
 		fmt.Println(err)
 		return nil, err
 	}
-	fmt.Println(body)
 
 	json.Unmarshal(body, userProfile)
-
-	fmt.Println(*userProfile)
 
 	return userProfile, nil
 }

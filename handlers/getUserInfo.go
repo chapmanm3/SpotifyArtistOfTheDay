@@ -14,7 +14,6 @@ func (h DBHandlerService) GetUserInfo(c *gin.Context) {
 	fmt.Println("Get User Info")
 	//authCode := c.Request.Header.Get("auth_code")
 	authCode, err := c.Request.Cookie("auth_code")
-  fmt.Printf("Auth Code: %s \n", authCode)
 
 	if err != nil {
 		fmt.Printf("No auth_code Cookie found")
@@ -22,7 +21,6 @@ func (h DBHandlerService) GetUserInfo(c *gin.Context) {
 	}
 
 	user, err := database.GetUserInfo(h.DB, authCode.Value)
-  fmt.Printf("User: %v", user)
 
 	if err != nil {
 		if err == pgx.ErrNoRows {

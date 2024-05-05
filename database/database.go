@@ -8,7 +8,6 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 func openDB() *gorm.DB {
@@ -80,7 +79,6 @@ func GetUserInfo(db *gorm.DB, authToken string) (*types.UserInfo, error) {
 	}
 
 	authInfo, authErr := GetAuthInfo(db, authToken)
-  fmt.Printf("Auth Info: %v \n", authInfo)
 
 	if authErr != nil {
 		fmt.Println(authErr)
@@ -101,7 +99,6 @@ func GetAuthInfo(db *gorm.DB, authToken string) (*types.AuthInfo, error) {
 	var authInfo types.AuthInfo
 
 	err := db.Find(&authInfo, "access_token = ?", authToken).Error
-  fmt.Printf("Auth Token: %v \n", authInfo)
 
 	if err != nil {
 		return nil, err
