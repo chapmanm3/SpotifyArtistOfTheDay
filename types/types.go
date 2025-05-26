@@ -1,6 +1,8 @@
 package types
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+)
 
 type AuthTokenResponse struct {
 	AccessToken  string `json:"access_token"`
@@ -57,6 +59,16 @@ type ArtistObject struct {
 	Uri          string           `json:"uri"`
 }
 
+type ArtistInfo struct {
+	gorm.Model
+	UserInfoID int
+	SpotifyUrl string
+	SpotifyId  string
+	Image      string
+	Name       string
+	Uri        string
+}
+
 type UsersTopArtistsResponse struct {
 	Href     string         `json:"href"`
 	Limit    int            `json:"limit"`
@@ -78,6 +90,7 @@ type UserInfo struct {
 	Uri             string
 	AuthInfo        AuthInfo
 	Artists         []ArtistInfo `gorm:"many2many:user_artists;"`
+	CurrentArtist   ArtistInfo
 }
 
 type AuthInfo struct {
@@ -88,13 +101,4 @@ type AuthInfo struct {
 	Scope        string
 	ExpiresIn    int
 	RefreshToken string
-}
-
-type ArtistInfo struct {
-	gorm.Model
-	SpotifyUrl string
-	SpotifyId  string
-	Image      string
-	Name       string
-	Uri        string
 }

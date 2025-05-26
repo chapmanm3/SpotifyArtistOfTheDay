@@ -24,14 +24,39 @@ func (h DBHandlerService) GetUsersTopArtists(c *gin.Context) {
 	}
 	authToken := authCode.Value
 
+	//Check if user already has valid top artist
+	userId, err := database.GetUserID(h.DB, authToken)
+	if err != nil {
+		fmt.Printf("User ID not found")
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{})
+		return
+	}
+
+	usersCurrentArtist, err := database.GetUsersCurrentArtist(h.DB, uint(*userId))
+	if err != nil {
+		fmt.Printf("Users Current Artist not found")
+	}
+
+	fmt.Printf("User Current Artist: %v", usersCurrentArtist)
+	t := time.Now()
+	elapsed := t.Sub(usersCurrentArtist.UpdatedAt)
+	fmt.Printf("Elapsed Time: %v", elapsed)
+	if elapsed.Hours() < 24 {
+		c.IndentedJSON(http.StatusOK, gin.H{"artist": usersCurrentArtist})
+		return
+	}
+
 	usersTopItems, err := getUsersTopItems(h.DB, authToken)
 
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{})
-    return;
+		return
 	}
 
-	c.IndentedJSON(http.StatusOK, gin.H{"artist": getRandomArtists(usersTopItems)})
+	randArtist := getRandomArtists(usersTopItems)
+	database.SetUsersCurrentArtist(h.DB, uint(*userId), &randArtist)
+
+	c.IndentedJSON(http.StatusOK, gin.H{"artist": randArtist})
 }
 
 func getUsersTopItems(db *gorm.DB, authToken string) ([]types.ArtistInfo, error) {
@@ -44,12 +69,12 @@ func getUsersTopItems(db *gorm.DB, authToken string) ([]types.ArtistInfo, error)
 	items, err := database.GetUsersTopArtists(db, uint(*userId))
 	if err != nil {
 		fmt.Printf("User ID Not Found \n")
-    fmt.Println(err)
+		fmt.Println(err)
 		return nil, err
 	}
 
-  fmt.Printf("Len Items: %v \n", len(items))
-	if items != nil && len(items) > 0{
+	fmt.Printf("Len Items: %v \n", len(items))
+	if items != nil && len(items) > 0 {
 		staleData := items[0].UpdatedAt.Before(time.Now().AddDate(0, 0, -7))
 
 		if !staleData {
@@ -75,9 +100,9 @@ func getUsersTopItems(db *gorm.DB, authToken string) ([]types.ArtistInfo, error)
 
 // Generics baby!
 func getRandomArtists[K any](artists []K) K {
-  if len(artists) == 0 {
-    log.Panic("Received an Array of len 0")
-  }
+	if len(artists) == 0 {
+		log.Panic("Received an Array of len 0")
+	}
 	randIndex := rand.Intn(len(artists))
 	fmt.Printf("Random Artist: %+v \n", artists[randIndex])
 	return artists[randIndex]

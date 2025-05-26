@@ -30,12 +30,12 @@ func InitDB() *gorm.DB {
 
 func SetUsersTopArtists(db *gorm.DB, userId int, artists []types.ArtistInfo) {
 	user := &types.UserInfo{
-		Model:   gorm.Model{ID: uint(userId)},
-		Artists: artists,
+		Model: gorm.Model{ID: uint(userId)},
 	}
-	db.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&user)
+	//db.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&user)
 	//db.Update("Artists", artists).Where(user)
 	//db.Save(&user)
+	db.Model(&user).Association("Artists").Replace(artists)
 }
 
 func GetUsersTopArtists(db *gorm.DB, userId uint) ([]types.ArtistInfo, error) {
@@ -152,4 +152,22 @@ func SetArtistInfo(db *gorm.DB, artist *types.ArtistObject) {
 		Uri:        artist.Uri,
 	}
 	db.Where(types.ArtistInfo{SpotifyId: artist.Id}).FirstOrCreate(&artistInfo, artistInfoInsert)
+}
+
+func SetUsersCurrentArtist(db *gorm.DB, userId uint, artist *types.ArtistInfo) {
+	user := &types.UserInfo{
+		Model: gorm.Model{ID: uint(userId)},
+	}
+	db.Model(user).Association("CurrentArtist").Replace(artist)
+}
+
+func GetUsersCurrentArtist(db *gorm.DB, userId uint) (*types.ArtistInfo, error) {
+	user := types.UserInfo{
+		Model: gorm.Model{ID: userId},
+	}
+	var artist types.ArtistInfo
+
+	db.Model(&user).Association("CurrentArtist").Find(&artist)
+
+	return &artist, nil
 }
