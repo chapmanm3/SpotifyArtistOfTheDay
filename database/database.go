@@ -35,7 +35,7 @@ func SetUsersTopArtists(db *gorm.DB, userId int, artists []types.ArtistInfo) {
 	//db.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&user)
 	//db.Update("Artists", artists).Where(user)
 	//db.Save(&user)
-	db.Model(&user).Association("Artists").Replace(artists)
+	db.Model(&user).Association("Artists").Append(artists)
 }
 
 func GetUsersTopArtists(db *gorm.DB, userId uint) ([]types.ArtistInfo, error) {
@@ -64,10 +64,9 @@ func SetUserInfo(db *gorm.DB, userResponse *types.UserProfileResponse, authRespo
 			ExpiresIn:    authResponse.ExpiresIn,
 			RefreshToken: authResponse.RefreshToken,
 		},
-		Artists: []types.ArtistInfo{},
 	}
 
-	db.Create(&userInfoInsert)
+	db.Debug().Omit("Artists", "CurrentArtist").Create(&userInfoInsert)
 	db.Save(&userInfoInsert)
 }
 
@@ -142,32 +141,34 @@ func GetUserID(db *gorm.DB, authToken string) (*int, error) {
 }
 
 func SetArtistInfo(db *gorm.DB, artist *types.ArtistObject) {
-	var artistInfo types.ArtistInfo
-
-	artistInfoInsert := types.ArtistInfo{
+	artistInfoInsert := &types.ArtistInfo{
 		SpotifyUrl: artist.ExternalUrls.Spotify,
 		SpotifyId:  artist.Id,
 		Image:      artist.Images[0].Url,
 		Name:       artist.Name,
 		Uri:        artist.Uri,
 	}
-	db.Where(types.ArtistInfo{SpotifyId: artist.Id}).FirstOrCreate(&artistInfo, artistInfoInsert)
+	db.Save(&artistInfoInsert)
 }
 
 func SetUsersCurrentArtist(db *gorm.DB, userId uint, artist *types.ArtistInfo) {
 	user := &types.UserInfo{
-		Model: gorm.Model{ID: uint(userId)},
+		Model:           gorm.Model{ID: uint(userId)},
+		CurrentArtistID: artist.ID,
 	}
-	db.Model(user).Association("CurrentArtist").Replace(artist)
+	db.Model(&user).Update("CurrentArtistID", artist.ID)
 }
 
 func GetUsersCurrentArtist(db *gorm.DB, userId uint) (*types.ArtistInfo, error) {
 	user := types.UserInfo{
 		Model: gorm.Model{ID: userId},
 	}
-	var artist types.ArtistInfo
+	db.Find(&user)
 
-	db.Model(&user).Association("CurrentArtist").Find(&artist)
+	artist := types.ArtistInfo{
+		Model: gorm.Model{ID: user.CurrentArtistID},
+	}
+	db.Find(&artist)
 
 	return &artist, nil
 }

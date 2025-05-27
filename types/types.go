@@ -61,9 +61,8 @@ type ArtistObject struct {
 
 type ArtistInfo struct {
 	gorm.Model
-	UserInfoID int
 	SpotifyUrl string
-	SpotifyId  string
+	SpotifyId  string `gorm:"unique"`
 	Image      string
 	Name       string
 	Uri        string
@@ -90,7 +89,7 @@ type UserInfo struct {
 	Uri             string
 	AuthInfo        AuthInfo
 	Artists         []ArtistInfo `gorm:"many2many:user_artists;"`
-	CurrentArtist   ArtistInfo
+	CurrentArtistID   uint
 }
 
 type AuthInfo struct {

@@ -37,7 +37,7 @@ func (h DBHandlerService) GetUsersTopArtists(c *gin.Context) {
 		fmt.Printf("Users Current Artist not found")
 	}
 
-	fmt.Printf("User Current Artist: %v", usersCurrentArtist)
+	fmt.Printf("User Current Artist: %v \n", usersCurrentArtist)
 	t := time.Now()
 	elapsed := t.Sub(usersCurrentArtist.UpdatedAt)
 	fmt.Printf("Elapsed Time: %v", elapsed)
@@ -90,7 +90,6 @@ func getUsersTopItems(db *gorm.DB, authToken string) ([]types.ArtistInfo, error)
 
 	var itemsQueryTotal = itemsQuery.Items[:]
 	fmt.Println("Writting Artists to DB")
-	writeArtistsToDB(db, itemsQueryTotal)
 
 	x := mapArtistResponseToArtistInfo(itemsQueryTotal)
 	writeArtistsToUser(db, x, *userId)
@@ -104,7 +103,6 @@ func getRandomArtists[K any](artists []K) K {
 		log.Panic("Received an Array of len 0")
 	}
 	randIndex := rand.Intn(len(artists))
-	fmt.Printf("Random Artist: %+v \n", artists[randIndex])
 	return artists[randIndex]
 }
 
@@ -118,12 +116,6 @@ func transformArtistObject(artist types.ArtistObject) types.ArtistInfo {
 		Uri:        artist.Uri,
 	}
 	return artistInfo
-}
-
-func writeArtistsToDB(db *gorm.DB, artists []types.ArtistObject) {
-	for i := 0; i < len(artists); i++ {
-		database.SetArtistInfo(db, &artists[i])
-	}
 }
 
 func writeArtistsToUser(db *gorm.DB, artists []types.ArtistInfo, userId int) {
