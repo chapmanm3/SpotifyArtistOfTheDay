@@ -8,6 +8,7 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func openDB() *gorm.DB {
@@ -24,6 +25,7 @@ func InitDB() *gorm.DB {
 	db.AutoMigrate(&types.UserInfo{})
 	db.AutoMigrate(&types.AuthInfo{})
 	db.AutoMigrate(&types.ArtistInfo{})
+	db.AutoMigrate(&types.Waitlist{})
 
 	return db
 }
@@ -171,4 +173,11 @@ func GetUsersCurrentArtist(db *gorm.DB, userId uint) (*types.ArtistInfo, error) 
 	db.Find(&artist)
 
 	return &artist, nil
+}
+
+func AddToWaitlist(db *gorm.DB, email string) {
+	entry := &types.Waitlist{
+		Email: email,
+	}
+	db.Clauses(clause.OnConflict{DoNothing: true}).Create(&entry)
 }

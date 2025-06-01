@@ -41,7 +41,7 @@ func main() {
 
 	router := gin.Default()
 
-  router.Use(nrgin.Middleware(app))
+	router.Use(nrgin.Middleware(app))
 	router.Use(static.Serve("/", static.LocalFile("./dist", true)))
 	router.Use(cors.New(config))
 
@@ -52,6 +52,7 @@ func main() {
 		api.GET("/callback", h.AuthCallback)
 		api.GET("/userInfo", h.GetUserInfo)
 		api.GET("/artist/today", h.GetUsersTopArtists)
+		api.POST("/waitlist", h.AddEmailToWaitlist)
 	}
 
 	router.Run()
