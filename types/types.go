@@ -89,7 +89,7 @@ type UserInfo struct {
 	Uri             string
 	AuthInfo        AuthInfo
 	Artists         []ArtistInfo `gorm:"many2many:user_artists;"`
-	CurrentArtistID   uint
+	CurrentArtistID uint
 }
 
 type AuthInfo struct {
@@ -100,4 +100,9 @@ type AuthInfo struct {
 	Scope        string
 	ExpiresIn    int
 	RefreshToken string
+}
+
+type Waitlist struct {
+	gorm.Model
+	Email string
 }

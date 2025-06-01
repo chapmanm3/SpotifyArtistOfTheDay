@@ -9,7 +9,6 @@ type DBHandlerService struct {
 }
 
 type APIHandlerService interface {
-
 }
 
 func New(db *gorm.DB) DBHandlerService {
